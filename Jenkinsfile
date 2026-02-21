@@ -2,37 +2,67 @@ pipeline {
     agent any
 
     environment {
-        SSH_CRED   = 'wordpress-app-key'
-        SERVER_IP  = '172.31.40.143'
+        SSH_CRED    = 'wordpress-app-key'
+        SERVER_IP   = '172.31.40.143'
         REMOTE_USER = 'ubuntu'
-        APP_DIR    = '/home/ubuntu/wordpress'
+        WEB_DIR     = '/var/www/html'
+
+        DB_NAME     = 'wordpress'
+        DB_USER     = 'root'
+        DB_PASS     = 'root123'
     }
 
     stages {
 
-        stage('Clone Repo') {
-            steps {
-                git url: 'https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy.git', branch: 'main'
-            }
-        }
-
-        stage('Deploy WordPress with Docker') {
+        stage('Deploy WordPress with DB Config') {
             steps {
                 sshagent(credentials: ["${SSH_CRED}"]) {
                     sh '''
-                        echo "Preparing directory on server..."
+                        echo "Installing Apache, MySQL, PHP..."
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
-                            mkdir -p ${APP_DIR}
+                            sudo apt update -y &&
+                            sudo apt install apache2 mysql-server php php-mysql libapache2-mod-php wget unzip -y
                         "
 
-                        echo "Copying docker-compose.yml to server..."
-                        scp docker-compose.yml ${REMOTE_USER}@${SERVER_IP}:${APP_DIR}/
-
-                        echo "Starting containers..."
+                        echo "Creating MySQL Database..."
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
-                            cd ${APP_DIR} &&
-                            docker compose down || true &&
-                            docker compose up -d
+                            sudo mysql -e \\"CREATE DATABASE IF NOT EXISTS ${DB_NAME};\\"
+                            sudo mysql -e \\"CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';\\"
+                            sudo mysql -e \\"GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';\\"
+                            sudo mysql -e \\"FLUSH PRIVILEGES;\\"
+                        "
+
+                        echo "Cleaning old website files..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
+                            sudo rm -rf ${WEB_DIR}/*
+                        "
+
+                        echo "Downloading WordPress..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
+                            cd /tmp &&
+                            wget -q https://wordpress.org/latest.zip &&
+                            unzip -o latest.zip
+                        "
+
+                        echo "Moving WordPress files..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
+                            sudo cp -r /tmp/wordpress/* ${WEB_DIR}/
+                        "
+
+                        echo "Configuring wp-config.php..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
+                            cd ${WEB_DIR}
+                            sudo cp wp-config-sample.php wp-config.php
+                            sudo sed -i \\"s/database_name_here/${DB_NAME}/\\" wp-config.php
+                            sudo sed -i \\"s/username_here/${DB_USER}/\\" wp-config.php
+                            sudo sed -i \\"s/password_here/${DB_PASS}/\\" wp-config.php
+                        "
+
+                        echo "Setting permissions..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "
+                            sudo chown -R www-data:www-data ${WEB_DIR}
+                            sudo chmod -R 755 ${WEB_DIR}
+                            sudo systemctl restart apache2
                         "
                     '''
                 }
