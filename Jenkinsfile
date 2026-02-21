@@ -8,8 +8,8 @@ pipeline {
         WEB_DIR     = '/var/www/html'
 
         DB_NAME     = 'wordpress'
-        DB_USER     = 'root'
-        DB_PASS     = 'root123'
+        DB_USER     = 'wpuser'
+        DB_PASS     = 'wppassword123'
     }
 
     stages {
