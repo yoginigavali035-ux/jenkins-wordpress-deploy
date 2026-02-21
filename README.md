@@ -70,4 +70,16 @@ jenkins-wordpress-deploy/
 
 ---
 
-images 
+## images 
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/server.png)
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/credintial.png)
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/webhook.png)
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/jenkins%20file.png)
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/create%20job.png)
+
+![img alt](https://github.com/yoginigavali035-ux/jenkins-wordpress-deploy/blob/main/images/connect%20to%20github.png)
