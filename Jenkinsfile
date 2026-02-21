@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SSH_CRED   = 'wordpress-app-key'
-        SERVER_IP  = '172.31.19.16'
+        SERVER_IP  = '172.31.40.143'
         REMOTE_USER = 'ubuntu'
         APP_DIR    = '/home/ubuntu/wordpress'
     }
